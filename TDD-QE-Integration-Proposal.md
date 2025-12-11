@@ -2,7 +2,7 @@
 ## AI-Powered Self-Healing Automation Framework
 
 **Prepared for:** Engineering Leadership  
-**Prepared by:** QE Team  
+**Prepared by:** QE Team  {Sayak Das}
 **Date:** December 2024  
 **Project:** Zero Trust Workload Identity Manager (ZTWIM)
 
@@ -665,16 +665,6 @@ def optimize_test_suite(
 ---
 
 ## ROI Analysis
-
-### Time Savings
-
-| Activity | Current | With TDD + MCP | Annual Savings |
-|----------|---------|----------------|----------------|
-| Test creation | 200 hrs/year | 50 hrs/year | **150 hrs** |
-| Test maintenance | 150 hrs/year | 30 hrs/year | **120 hrs** |
-| Bug investigation | 100 hrs/year | 40 hrs/year | **60 hrs** |
-| Rework from late bugs | 200 hrs/year | 50 hrs/year | **150 hrs** |
-| **Total** | **650 hrs/year** | **170 hrs/year** | **480 hrs** |
 
 ### Quality Improvements
 
