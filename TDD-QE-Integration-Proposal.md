@@ -712,8 +712,3 @@ def optimize_test_suite(
 | 5. First auto-generated test demo | QE | Week 8 |
 
 ---
-
-*Proposal Version: 1.0*  
-*Prepared for Engineering Leadership*  
-*December 2024*
-
