@@ -2,7 +2,7 @@
 ## AI-Powered Self-Healing Automation Framework
 
 **Prepared for:** Engineering Leadership  
-**Prepared by:** QE Team  {Sayak Das}
+**Prepared by:** QE Team  {Sayak Das}  
 **Date:** December 2024  
 **Project:** Zero Trust Workload Identity Manager (ZTWIM)
 
@@ -96,45 +96,16 @@ We propose a **Test-Driven Development (TDD) approach** where QE is embedded in 
 | Vague requirements | Clear, measurable AC |
 | Late surprises | Early risk identification |
 
-### QE Responsibilities in Design Phase
+### What QE Brings to Design Phase
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    QE DESIGN PHASE ACTIVITIES                                │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   1. REQUIREMENT REVIEW                                                      │
-│      ───────────────────                                                     │
-│      • Review user stories for testability                                   │
-│      • Identify missing acceptance criteria                                  │
-│      • Flag ambiguous requirements                                           │
-│      • Propose edge cases and negative scenarios                             │
-│                                                                              │
-│   2. TEST STRATEGY PLANNING                                                  │
-│      ─────────────────────                                                   │
-│      • Define test pyramid (unit/integration/e2e split)                      │
-│      • Identify automation candidates                                        │
-│      • Plan performance/security testing needs                               │
-│      • Estimate testing effort                                               │
-│                                                                              │
-│   3. ACCEPTANCE CRITERIA CO-AUTHORING                                        │
-│      ────────────────────────────────                                        │
-│      • Write testable AC with Dev                                            │
-│      • Define "Definition of Done" including test criteria                   │
-│      • Create test scenarios before code                                     │
-│      • Agree on data requirements                                            │
-│                                                                              │
-│   4. ARCHITECTURE REVIEW                                                     │
-│      ────────────────────                                                    │
-│      • Ensure testability hooks (observability, logging)                     │
-│      • Review for test environment needs                                     │
-│      • Identify mocking/stubbing requirements                                │
-│      • Plan for chaos/resilience testing                                     │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+| Activity | Value Delivered |
+|----------|-----------------|
+| **Requirement Review** | Identify gaps, flag ambiguity, propose edge cases |
+| **Test Strategy Planning** | Define test pyramid, identify automation candidates |
+| **Acceptance Criteria Co-Authoring** | Ensure testable AC with clear pass/fail criteria |
+| **Architecture Review** | Ensure testability hooks, logging, and observability |
 
-### Implementation: QE in Sprint Ceremonies
+### QE in Sprint Ceremonies
 
 | Ceremony | QE Participation |
 |----------|------------------|
@@ -147,62 +118,24 @@ We propose a **Test-Driven Development (TDD) approach** where QE is embedded in 
 
 ---
 
-## Pillar 2: Structured Story Documentation by Dev
+## Pillar 2: Structured Story Documentation
+
+### Why This Matters
+
+Without structured documentation, QE spends significant time:
+- Clarifying requirements with developers
+- Discovering missing scenarios during testing
+- Re-testing after misunderstood requirements
 
 ### Story Documentation Standard
 
 Every user story MUST include:
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    STORY DOCUMENTATION TEMPLATE                              │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   TITLE: [Feature/Bug Title]                                                │
-│   JIRA: [SPIRE-XXX]                                                         │
-│                                                                              │
-│   ─────────────────────────────────────────────────────────────────────     │
-│   USER STORY                                                                 │
-│   ─────────────────────────────────────────────────────────────────────     │
-│   As a [role]                                                                │
-│   I want [feature]                                                           │
-│   So that [business value]                                                   │
-│                                                                              │
-│   ─────────────────────────────────────────────────────────────────────     │
-│   ACCEPTANCE CRITERIA (Testable - REQUIRED)                                  │
-│   ─────────────────────────────────────────────────────────────────────     │
-│   AC-1: GIVEN [precondition] WHEN [action] THEN [expected result]           │
-│   AC-2: GIVEN [precondition] WHEN [action] THEN [expected result]           │
-│   AC-3: ...                                                                  │
-│                                                                              │
-│   ─────────────────────────────────────────────────────────────────────     │
-│   NEGATIVE SCENARIOS (REQUIRED)                                              │
-│   ─────────────────────────────────────────────────────────────────────     │
-│   NEG-1: GIVEN [invalid state] WHEN [action] THEN [error handling]          │
-│   NEG-2: ...                                                                 │
-│                                                                              │
-│   ─────────────────────────────────────────────────────────────────────     │
-│   EDGE CASES (REQUIRED)                                                      │
-│   ─────────────────────────────────────────────────────────────────────     │
-│   EDGE-1: [boundary condition and expected behavior]                         │
-│   EDGE-2: ...                                                                │
-│                                                                              │
-│   ─────────────────────────────────────────────────────────────────────     │
-│   TEST DATA REQUIREMENTS                                                     │
-│   ─────────────────────────────────────────────────────────────────────     │
-│   • Required resources/manifests                                             │
-│   • Environment prerequisites                                                │
-│   • Mock/stub requirements                                                   │
-│                                                                              │
-│   ─────────────────────────────────────────────────────────────────────     │
-│   API CHANGES (If applicable)                                                │
-│   ─────────────────────────────────────────────────────────────────────     │
-│   • New endpoints/fields                                                     │
-│   • Changed behavior                                                         │
-│   • Deprecations                                                             │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+- **User Story** - Role, feature, business value
+- **Acceptance Criteria** - GIVEN/WHEN/THEN format (testable)
+- **Negative Scenarios** - Error handling expectations
+- **Edge Cases** - Boundary conditions
+- **Test Data Requirements** - Resources, environments, mocks
+- **API Changes** - New/changed endpoints (if applicable)
 
 ### Example: Well-Documented Story
 
@@ -269,6 +202,8 @@ API CHANGES:
 
 ### Vision: Self-Generating, Self-Healing Tests
 
+The MCP (Model Context Protocol) server acts as an AI brain that understands both the codebase and test requirements, enabling intelligent automation.
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │               MCP-POWERED AUTOMATION FRAMEWORK                               │
@@ -284,23 +219,14 @@ API CHANGES:
 │   │                    MCP SERVER (AI Brain)                          │     │
 │   ├──────────────────────────────────────────────────────────────────┤     │
 │   │                                                                   │     │
-│   │   ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │     │
-│   │   │   CODE      │  │   STORY     │  │  EXISTING   │             │     │
-│   │   │   ANALYZER  │  │   PARSER    │  │   TESTS     │             │     │
-│   │   └──────┬──────┘  └──────┬──────┘  └──────┬──────┘             │     │
-│   │          │                │                │                     │     │
-│   │          └────────────────┼────────────────┘                     │     │
-│   │                           ▼                                      │     │
-│   │              ┌────────────────────────┐                         │     │
-│   │              │    AI TEST GENERATOR   │                         │     │
-│   │              │    ─────────────────   │                         │     │
-│   │              │  • Analyzes PR diff    │                         │     │
-│   │              │  • Reads AC from story │                         │     │
-│   │              │  • Generates tests     │                         │     │
-│   │              │  • Optimizes existing  │                         │     │
-│   │              └────────────┬───────────┘                         │     │
-│   │                           │                                      │     │
-│   └───────────────────────────┼──────────────────────────────────────┘     │
+│   │   • Analyzes code changes from PR                                │     │
+│   │   • Reads acceptance criteria from JIRA                          │     │
+│   │   • Understands existing test patterns                           │     │
+│   │   • Generates new tests aligned with AC                          │     │
+│   │   • Identifies broken tests and auto-fixes them                  │     │
+│   │   • Optimizes test execution order                               │     │
+│   │                                                                   │     │
+│   └───────────────────────────┬──────────────────────────────────────┘     │
 │                               ▼                                             │
 │   ┌──────────────────────────────────────────────────────────────────┐     │
 │   │                    OUTPUT                                         │     │
@@ -315,38 +241,13 @@ API CHANGES:
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### MCP Server Capabilities
+### Capability 1: Auto Test Generation from PR
 
-#### 1. Auto Test Generation from PR
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    AUTO TEST GENERATION                                      │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   INPUT:                                                                     │
-│   ──────                                                                     │
-│   • PR diff (code changes)                                                   │
-│   • JIRA story with acceptance criteria                                      │
-│   • Existing test patterns in framework                                      │
-│                                                                              │
-│   PROCESS:                                                                   │
-│   ────────                                                                   │
-│   1. Parse PR to identify changed functions/APIs                             │
-│   2. Extract acceptance criteria from linked JIRA                            │
-│   3. Match AC to existing test patterns                                      │
-│   4. Generate test skeleton following framework conventions                  │
-│   5. Add assertions based on expected behavior                               │
-│   6. Include edge cases and negative tests                                   │
-│                                                                              │
-│   OUTPUT:                                                                    │
-│   ───────                                                                    │
-│   • Ready-to-review test file                                                │
-│   • Coverage mapping (AC → Test)                                             │
-│   • Suggested manual test scenarios                                          │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+**What It Does:**
+- When a developer creates a PR, the MCP server automatically fetches the linked JIRA story
+- It extracts acceptance criteria (GIVEN/WHEN/THEN)
+- It analyzes the code changes to understand what was implemented
+- It generates test skeletons matching each acceptance criterion
 
 **Example Flow:**
 
@@ -367,12 +268,11 @@ Developer creates PR: "Add label reconciliation for SpireAgent"
                               │
                               ▼
               ┌───────────────────────────────────┐
-              │  AI generates:                    │
-              │  test_label_reconciliation.py     │
-              │  - test_single_label_removal()    │
-              │  - test_multiple_label_removal()  │
-              │  - test_operator_restart()        │
-              │  - test_invalid_labels_negative() │
+              │  AI generates tests for:          │
+              │  - Single label removal (AC-1)    │
+              │  - Multiple label removal (AC-2)  │
+              │  - Operator restart scenario (AC-3)│
+              │  - Invalid labels (NEG-1)         │
               └───────────────┬───────────────────┘
                               │
                               ▼
@@ -382,181 +282,70 @@ Developer creates PR: "Add label reconciliation for SpireAgent"
               └───────────────────────────────────┘
 ```
 
-#### 2. Self-Healing Tests
+### Capability 2: Self-Healing Tests
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    SELF-HEALING CAPABILITY                                   │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   PROBLEM: Code changes break existing tests                                 │
-│                                                                              │
-│   TRADITIONAL APPROACH:                                                      │
-│   ─────────────────────                                                      │
-│   1. Test fails in CI                                                        │
-│   2. QE investigates (1-2 hours)                                             │
-│   3. QE identifies broken selector/assertion                                 │
-│   4. QE manually fixes test                                                  │
-│   5. QE creates PR for fix                                                   │
-│   Total: 2-4 hours per broken test                                           │
-│                                                                              │
-│   MCP SELF-HEALING APPROACH:                                                 │
-│   ──────────────────────────                                                 │
-│   1. Test fails in CI                                                        │
-│   2. MCP analyzes failure + PR diff                                          │
-│   3. MCP identifies: "Field 'status.phase' renamed to 'status.state'"       │
-│   4. MCP auto-generates fix PR                                               │
-│   5. QE reviews and approves                                                 │
-│   Total: 15 minutes                                                          │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+**The Problem:** When code changes, existing tests often break due to renamed fields, changed selectors, or updated APIs. This creates significant maintenance burden.
+
+**Traditional Approach:**
+1. Test fails in CI
+2. QE investigates (1-2 hours)
+3. QE identifies broken selector/assertion
+4. QE manually fixes test
+5. QE creates PR for fix
+
+**Total: 2-4 hours per broken test**
+
+**MCP Self-Healing Approach:**
+1. Test fails in CI
+2. MCP analyzes failure + PR diff
+3. MCP identifies the root cause (e.g., "Field 'status.phase' renamed to 'status.state'")
+4. MCP auto-generates fix PR
+5. QE reviews and approves
+
+**Total: 15 minutes**
 
 **Self-Healing Scenarios:**
 
-| Failure Type | MCP Auto-Fix |
-|--------------|--------------|
-| Selector changed | Update CSS/XPath selector |
-| API field renamed | Update field references |
-| Timeout too short | Adjust wait times based on metrics |
-| Resource name changed | Update resource references |
-| New required field | Add field to test fixtures |
-| Deprecated API | Migrate to new API |
+| Failure Type | What MCP Does |
+|--------------|---------------|
+| Selector changed | Updates CSS/XPath selector |
+| API field renamed | Updates field references |
+| Timeout too short | Adjusts wait times based on metrics |
+| Resource name changed | Updates resource references |
+| New required field | Adds field to test fixtures |
+| Deprecated API | Migrates to new API |
 
-#### 3. Test Optimization
+### Capability 3: Test Optimization
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    TEST OPTIMIZATION                                         │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   MCP ANALYZES:                                                              │
-│   ─────────────                                                              │
-│   • Test execution history (pass/fail patterns)                              │
-│   • Code coverage data                                                       │
-│   • Test duration metrics                                                    │
-│   • Flakiness rates                                                          │
-│   • PR change impact                                                         │
-│                                                                              │
-│   MCP OPTIMIZES:                                                             │
-│   ──────────────                                                             │
-│   • Reorders tests (fast + high-impact first)                                │
-│   • Identifies redundant tests                                               │
-│   • Suggests test parallelization                                            │
-│   • Flags flaky tests for review                                             │
-│   • Recommends test retirement                                               │
-│                                                                              │
-│   EXAMPLE OUTPUT:                                                            │
-│   ───────────────                                                            │
-│   "Recommended changes for PR #247:                                          │
-│    - Run tests in order: [TC-005, TC-001, TC-003] (highest impact)          │
-│    - Skip TC-012 (redundant with TC-005)                                     │
-│    - TC-008 has 15% flakiness - investigate or quarantine                   │
-│    - Estimated runtime: 45 min → 28 min (38% reduction)"                    │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+**What MCP Analyzes:**
+- Test execution history (pass/fail patterns)
+- Code coverage data
+- Test duration metrics
+- Flakiness rates
+- PR change impact
 
-### MCP Server Architecture
+**What MCP Optimizes:**
+- Reorders tests (fast + high-impact first)
+- Identifies redundant tests
+- Suggests test parallelization
+- Flags flaky tests for review
+- Recommends test retirement
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    MCP SERVER ARCHITECTURE                                   │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │                         MCP SERVER                                   │   │
-│   ├─────────────────────────────────────────────────────────────────────┤   │
-│   │                                                                      │   │
-│   │   TOOLS (Exposed to AI)                                             │   │
-│   │   ─────────────────────                                             │   │
-│   │                                                                      │   │
-│   │   ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐ │   │
-│   │   │  pr_analyzer     │  │  jira_reader     │  │  test_generator  │ │   │
-│   │   │  ────────────    │  │  ────────────    │  │  ──────────────  │ │   │
-│   │   │  • Get PR diff   │  │  • Fetch story   │  │  • Create test   │ │   │
-│   │   │  • Parse changes │  │  • Extract AC    │  │  • Add fixtures  │ │   │
-│   │   │  • Find impact   │  │  • Get comments  │  │  • Write asserts │ │   │
-│   │   └──────────────────┘  └──────────────────┘  └──────────────────┘ │   │
-│   │                                                                      │   │
-│   │   ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐ │   │
-│   │   │  test_healer     │  │  coverage_analyzer│ │  test_optimizer  │ │   │
-│   │   │  ────────────    │  │  ────────────────│  │  ──────────────  │ │   │
-│   │   │  • Detect breaks │  │  • Map coverage  │  │  • Reorder tests │ │   │
-│   │   │  • Suggest fixes │  │  • Find gaps     │  │  • Remove dupes  │ │   │
-│   │   │  • Auto-repair   │  │  • Report status │  │  • Parallelize   │ │   │
-│   │   └──────────────────┘  └──────────────────┘  └──────────────────┘ │   │
-│   │                                                                      │   │
-│   │   RESOURCES (Data Access)                                           │   │
-│   │   ───────────────────────                                           │   │
-│   │   • test://patterns/* - Framework test patterns                     │   │
-│   │   • coverage://reports/* - Historical coverage data                 │   │
-│   │   • metrics://tests/* - Test execution metrics                      │   │
-│   │                                                                      │   │
-│   └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                              │
-│   INTEGRATIONS                                                               │
-│   ────────────                                                               │
-│   • GitHub/GitLab (PR webhooks)                                             │
-│   • JIRA (Story fetching)                                                   │
-│   • CI/CD (Test execution)                                                  │
-│   • Prometheus (Metrics)                                                    │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+**Example Output:**
+> "Recommended changes for PR #247:
+> - Run tests in order: [TC-005, TC-001, TC-003] (highest impact)
+> - Skip TC-012 (redundant with TC-005)
+> - TC-008 has 15% flakiness - investigate or quarantine
+> - Estimated runtime: 45 min → 28 min (38% reduction)"
 
-### MCP Server Tools Definition
+### MCP Server Integrations
 
-```python
-# mcp_server/tools.py
-
-@mcp_tool
-def analyze_pr(pr_url: str) -> dict:
-    """
-    Analyze a PR to understand code changes.
-    Returns: changed files, functions, APIs, and impact assessment.
-    """
-
-@mcp_tool
-def fetch_story_ac(jira_id: str) -> list[str]:
-    """
-    Fetch acceptance criteria from JIRA story.
-    Returns: List of GIVEN/WHEN/THEN acceptance criteria.
-    """
-
-@mcp_tool
-def generate_test(
-    pr_diff: str,
-    acceptance_criteria: list[str],
-    framework_patterns: str
-) -> str:
-    """
-    Generate test file based on PR changes and AC.
-    Returns: Python test file content.
-    """
-
-@mcp_tool
-def heal_test(
-    failed_test: str,
-    error_message: str,
-    pr_diff: str
-) -> str:
-    """
-    Auto-fix broken test based on code changes.
-    Returns: Fixed test file content.
-    """
-
-@mcp_tool
-def optimize_test_suite(
-    test_files: list[str],
-    execution_history: dict,
-    pr_impact: list[str]
-) -> dict:
-    """
-    Optimize test execution order and identify redundancies.
-    Returns: Optimized test plan with recommendations.
-    """
-```
+| System | Purpose |
+|--------|---------|
+| **GitHub/GitLab** | PR webhooks, code analysis |
+| **JIRA** | Story and AC fetching |
+| **CI/CD** | Test execution triggers |
+| **Prometheus** | Metrics collection |
 
 ---
 
@@ -598,7 +387,7 @@ def optimize_test_suite(
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Detailed Workflow Steps
+### Workflow Summary
 
 | Step | Actor | Action | MCP Role |
 |------|-------|--------|----------|
@@ -618,6 +407,7 @@ def optimize_test_suite(
 ## Implementation Plan
 
 ### Phase 1: Foundation (4 weeks)
+**Focus:** Process changes and team alignment
 
 | Week | Deliverable | Owner |
 |------|-------------|-------|
@@ -625,14 +415,16 @@ def optimize_test_suite(
 | 3-4 | QE integration in sprint ceremonies | Scrum Master |
 
 ### Phase 2: MCP Server MVP (6 weeks)
+**Focus:** Core AI capabilities
 
 | Week | Deliverable | Owner |
 |------|-------------|-------|
 | 5-6 | MCP server scaffolding + GitHub integration | QE |
-| 7-8 | PR analyzer + JIRA reader tools | QE |
-| 9-10 | Test generator (basic) | QE |
+| 7-8 | PR analyzer + JIRA reader capabilities | QE |
+| 9-10 | Basic test generator | QE |
 
 ### Phase 3: Self-Healing (4 weeks)
+**Focus:** Maintenance reduction
 
 | Week | Deliverable | Owner |
 |------|-------------|-------|
@@ -640,6 +432,7 @@ def optimize_test_suite(
 | 13-14 | Auto-fix generator + PR creation | QE |
 
 ### Phase 4: Optimization (4 weeks)
+**Focus:** Efficiency improvements
 
 | Week | Deliverable | Owner |
 |------|-------------|-------|
@@ -675,14 +468,24 @@ def optimize_test_suite(
 | Test reliability | 85% | 98% |
 | Release confidence | Medium | High |
 
+### Time Savings
+
+| Activity | Current Time | Expected Time | Annual Savings |
+|----------|--------------|---------------|----------------|
+| Test creation per feature | 4 hours | 30 minutes | ~280 hours |
+| Test maintenance | 30% of QE time | 10% of QE time | ~200 hours |
+| Bug investigation (late finds) | Variable | Reduced by 80% | ~100+ hours |
+
+**Estimated Annual Savings: 480+ engineering hours (~12 weeks)**
+
 ---
 
 ## Risk Assessment
 
 | Risk | Probability | Impact | Mitigation |
 |------|-------------|--------|------------|
-| Dev resistance to AC requirements | Medium | High | Training, demonstrate value |
-| AI generates incorrect tests | Medium | Medium | Human review required |
+| Dev resistance to AC requirements | Medium | High | Training, demonstrate value early |
+| AI generates incorrect tests | Medium | Medium | Human review always required |
 | MCP server complexity | Medium | Medium | Start simple, iterate |
 | Integration challenges | Low | High | Use standard APIs |
 
@@ -693,10 +496,10 @@ def optimize_test_suite(
 **Proceed with TDD + MCP implementation** for the following reasons:
 
 1. **Shift-left quality** - Bugs found in design cost 10x less to fix
-2. **Structured stories** - Clear AC enables automation
+2. **Structured stories** - Clear AC enables both human and AI understanding
 3. **AI-powered tests** - 60%+ test creation automated
-4. **Self-healing** - 70% reduction in maintenance
-5. **480 hours saved annually** - ~12 weeks of engineering time
+4. **Self-healing** - 70% reduction in maintenance burden
+5. **480+ hours saved annually** - ~12 weeks of engineering time
 6. **Higher release confidence** - Quality built-in, not tested-in
 
 ---
