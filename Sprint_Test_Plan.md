@@ -128,18 +128,6 @@ Each PR undergoes the following testing before merge:
 
 ---
 
-## QE Work Distribution
-
-| Task | QE1 | QE2 |
-|------|-----|-----|
-| Premerge (odd PRs) | Primary | Backup |
-| Premerge (even PRs) | Backup | Primary |
-| Integration Testing | Support | Lead |
-| Regression Testing | Both | Both |
-| Buffer/Fixes | Both | Both |
-
----
-
 ## Sprint Timeline
 
 ```
