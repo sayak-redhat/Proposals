@@ -5,8 +5,10 @@
 This test plan follows a **sprint-based testing strategy** where QE work begins when the EP is approved. Testing is executed in parallel with development, with test preparation happening before PRs arrive and test execution occurring as PRs are submitted.
 
 **Sprint Duration**: 3 Weeks (21 Days)  
-**QA Team**: 2 Engineers (QE1 & QE2)  
+**QA Team**: Varies based on team capacity  
 **PRs per EP**: Varies (typically 4-8 PRs)
+
+> **Note**: This document uses **2 QE engineers** as an example to illustrate the workflow. The actual number of QEs may vary based on team size and availability. Adjust the work distribution accordingly.
 
 ---
 
@@ -130,15 +132,17 @@ Each PR undergoes the following testing before merge:
 
 ## Sprint Timeline
 
+> **Example with 2 QEs**: PRs are distributed between QE engineers for parallel testing.
+
 ```
 WEEK 0 (Prep)        WEEK 1-2 (Execution)     WEEK 3 (Regression)
 ─────────────        ────────────────────     ───────────────────
                      
-Test Plan Design     PR1 ████ (QE1)           PRn ██ (QE1)
-Test Cases Writing   PR2 ████ (QE2)              │
-E2E Script Dev       PR3 ████ (QE1)              ▼
-Environment Setup    PR4 ████ (QE2)          ┌──────────┐
-       │             PR5 ████ (QE1)          │REGRESSION│
+Test Plan Design     PR1 ████ (QE-A)          PRn ██ (QE-A)
+Test Cases Writing   PR2 ████ (QE-B)              │
+E2E Script Dev       PR3 ████ (QE-A)              ▼
+Environment Setup    PR4 ████ (QE-B)          ┌──────────┐
+       │             PR5 ████ (QE-A)          │REGRESSION│
        │                 │                   │ Day16-18 │
        ▼                 ▼                   └──────────┘
 ┌──────────────┐     Integration                  │
@@ -148,6 +152,14 @@ Environment Setup    PR4 ████ (QE2)          ┌────────
                                              │ Day19-21 │
                                              └──────────┘
 ```
+
+### Work Distribution Guidelines
+
+- **Distribute PRs** evenly among available QE engineers
+- **Alternate assignments** to balance workload (odd PRs to QE-A, even PRs to QE-B, etc.)
+- **Integration testing** can be led by one QE with support from others
+- **Regression testing** involves all available QEs working in parallel
+- Adjust timeline if team has more or fewer QEs
 
 ---
 
@@ -179,7 +191,7 @@ Environment Setup    PR4 ████ (QE2)          ┌────────
 ### Sprint Exit Criteria
 - [ ] All EP PRs merged and tested
 - [ ] Regression complete
-- [ ] Sign-off from both QEs
+- [ ] Sign-off from all assigned QEs
 - [ ] All P1/P2 bugs resolved
 
 ---
