@@ -4,9 +4,11 @@
 
 This test plan follows a **sprint-based testing strategy** where QE work begins when the EP is approved. Testing is executed in parallel with development, with test preparation happening before PRs arrive and test execution occurring as PRs are submitted.
 
-**Sprint Duration**: 3 Weeks (21 Days)  
+**Sprint Duration**: 3 Weeks (21 Calendar Days / **15 Working Days**)  
 **QA Team**: Varies based on team capacity  
 **PRs per EP**: Varies (typically 4-8 PRs)
+
+> **Working Days Breakdown**: 21 calendar days = 15 working days (excluding 6 weekend days)
 
 > **Note**: This document uses **2 QE engineers** as an example to illustrate the workflow. The actual number of QEs may vary based on team size and availability. Adjust the work distribution accordingly.
 
@@ -25,13 +27,15 @@ EP APPROVED ──► TEST PREPARATION ──► PR READY ──► TEST EXECUTI
 
 ### Testing Phases
 
-| Phase | When | Duration | Scope |
-|-------|------|----------|-------|
-| **Test Preparation** | EP Approved (Week 0) | 5-7 days | Test plan, test cases, E2E scripts |
-| **Premerge Testing** | PRs Ready (Week 1-3) | 2-3 days/PR | PR functionality + affected components |
-| **Integration Testing** | After every 2 PRs | 0.5 day | PR interactions |
-| **Regression Testing** | End of Sprint | 2-3 days | Full product |
-| **Buffer Period** | Final days | 2-3 days | Bug fixes, sign-off |
+| Phase | When | Duration (Working Days) | Scope |
+|-------|------|-------------------------|-------|
+| **Test Preparation** | EP Approved (Week 0) | 4-5 working days | Test plan, test cases, E2E scripts |
+| **Premerge Testing** | PRs Ready (Week 1-3) | 1.5-2 working days/PR | PR functionality + affected components |
+| **Integration Testing** | After every 2 PRs | 0.5 working day | PR interactions |
+| **Regression Testing** | End of Sprint | 2 working days | Full product |
+| **Buffer Period** | Final days | 1-2 working days | Bug fixes, sign-off |
+
+**Total: 15 Working Days**
 
 ---
 
@@ -39,12 +43,14 @@ EP APPROVED ──► TEST PREPARATION ──► PR READY ──► TEST EXECUTI
 
 Once EP is approved, QE prepares while developers code:
 
-| Activity | Duration | Deliverable |
-|----------|----------|-------------|
-| Test Plan Design | 2-3 days | Test plan document |
-| Test Case Writing | 3-4 days | Test cases per PR |
-| E2E Script Development | 5-7 days | Automated E2E tests |
-| Test Environment Setup | 1-2 days | Test cluster ready |
+| Activity | Duration (Working Days) | Deliverable |
+|----------|-------------------------|-------------|
+| Test Plan Design | 1-2 working days | Test plan document |
+| Test Case Writing | 2-3 working days | Test cases per PR |
+| E2E Script Development | 3-4 working days | Automated E2E tests |
+| Test Environment Setup | 1 working day | Test cluster ready |
+
+> **Note**: Activities can overlap. Total preparation: ~4-5 working days
 
 ---
 
@@ -83,7 +89,7 @@ Each PR undergoes the following testing before merge:
 ## Integration Testing
 
 **When**: After every 2 PRs merged  
-**Duration**: 0.5 day per checkpoint
+**Duration**: 0.5 working day per checkpoint
 
 | IN SCOPE | OUT OF SCOPE |
 |----------|--------------|
@@ -93,18 +99,18 @@ Each PR undergoes the following testing before merge:
 
 ### Integration Checkpoints
 
-| Checkpoint | When | Focus |
-|------------|------|-------|
-| INT-1 | Day 7 | First 2-3 PRs work together |
-| INT-2 | Day 12 | Extended PR set integration |
-| INT-3 | Day 15 | Complete EP functionality |
+| Checkpoint | Working Day | Calendar Day | Focus |
+|------------|-------------|--------------|-------|
+| INT-1 | Day 5 | ~Day 7 | First 2-3 PRs work together |
+| INT-2 | Day 9 | ~Day 12 | Extended PR set integration |
+| INT-3 | Day 11 | ~Day 15 | Complete EP functionality |
 
 ---
 
 ## Regression Testing
 
-**When**: All PRs merged to master test branch (Day 16-18)  
-**Duration**: 2-3 days
+**When**: All PRs merged to master test branch (Working Day 12-13 / Calendar Day 16-18)  
+**Duration**: 2 working days
 
 | IN SCOPE | OUT OF SCOPE |
 |----------|--------------|
@@ -134,32 +140,41 @@ Each PR undergoes the following testing before merge:
 
 > **Example with 2 QEs**: PRs are distributed between QE engineers for parallel testing.
 
+### 15 Working Days Breakdown
+
 ```
-WEEK 0 (Prep)        WEEK 1-2 (Execution)     WEEK 3 (Regression)
-─────────────        ────────────────────     ───────────────────
-                     
-Test Plan Design     PR1 ████ (QE-A)          PRn ██ (QE-A)
-Test Cases Writing   PR2 ████ (QE-B)              │
-E2E Script Dev       PR3 ████ (QE-A)              ▼
-Environment Setup    PR4 ████ (QE-B)          ┌──────────┐
-       │             PR5 ████ (QE-A)          │REGRESSION│
-       │                 │                   │ Day16-18 │
-       ▼                 ▼                   └──────────┘
-┌──────────────┐     Integration                  │
-│ READY FOR    │     Checkpoints                  ▼
-│ PR TESTING   │     (Day 7, 12)             ┌──────────┐
-└──────────────┘                             │ BUFFER   │
-                                             │ Day19-21 │
-                                             └──────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    21 CALENDAR DAYS = 15 WORKING DAYS                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  Week 1          │  Week 2          │  Week 3                               │
+│  Mon-Fri (5 WD)  │  Mon-Fri (5 WD)  │  Mon-Fri (5 WD)                       │
+│  [Sat-Sun off]   │  [Sat-Sun off]   │  [Sat-Sun off]                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+WD = Working Day
 ```
 
-### Work Distribution Guidelines
+### Sprint Timeline (Working Days)
 
-- **Distribute PRs** evenly among available QE engineers
-- **Alternate assignments** to balance workload (odd PRs to QE-A, even PRs to QE-B, etc.)
-- **Integration testing** can be led by one QE with support from others
-- **Regression testing** involves all available QEs working in parallel
-- Adjust timeline if team has more or fewer QEs
+```
+WEEK 0 (Prep)           WEEK 1-2 (Execution)        WEEK 3 (Regression)
+4-5 Working Days        WD 1-11                     WD 12-15
+─────────────────       ────────────────────        ───────────────────
+                        
+Test Plan Design        PR1 ██ (QE-A) WD 1-2        PRn █ (QE-A) WD 11
+Test Cases Writing      PR2 ██ (QE-B) WD 1-2            │
+E2E Script Dev          PR3 ██ (QE-A) WD 3-4            ▼
+Environment Setup       PR4 ██ (QE-B) WD 3-4        ┌──────────────┐
+       │                PR5 ██ (QE-A) WD 5-6        │  REGRESSION  │
+       │                PR6 ██ (QE-B) WD 5-6        │  WD 12-13    │
+       ▼                    │                       └──────────────┘
+┌──────────────┐        Integration                      │
+│ READY FOR    │        Checkpoints                      ▼
+│ PR TESTING   │        (WD 5, 9, 11)               ┌──────────────┐
+└──────────────┘                                    │   BUFFER     │
+                                                    │   WD 14-15   │
+                                                    └──────────────┘
+```
 
 ---
 
@@ -206,7 +221,7 @@ Environment Setup    PR4 ████ (QE-B)          ┌───────�
 
 ### Integration Tests
 - Integration tests verify PR interactions
-- Run at checkpoints (Day 7, 12, 15)
+- Run at checkpoints (Working Day 5, 9, 11)
 - Focus on data flow and combined functionality
 
 ### Unit Tests
