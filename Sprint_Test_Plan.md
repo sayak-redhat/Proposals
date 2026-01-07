@@ -4,11 +4,10 @@
 
 This test plan follows a **sprint-based testing strategy** where QE work begins when the EP is approved. Testing is executed in parallel with development, with test preparation happening before PRs arrive and test execution occurring as PRs are submitted.
 
-**Sprint Duration**: 3 Weeks (21 Calendar Days / **15 Working Days**)  
+**Sprint Duration**: 3 Weeks (**15 Working Days**)  
 **QA Team**: Varies based on team capacity  
 **PRs per EP**: Varies (typically 4-8 PRs)
 
-> **Working Days Breakdown**: 21 calendar days = 15 working days (excluding 6 weekend days)
 
 > **Note**: This document uses **2 QE engineers** as an example to illustrate the workflow. The actual number of QEs may vary based on team size and availability. Adjust the work distribution accordingly.
 
@@ -99,17 +98,17 @@ Each PR undergoes the following testing before merge:
 
 ### Integration Checkpoints
 
-| Checkpoint | Working Day | Calendar Day | Focus |
-|------------|-------------|--------------|-------|
-| INT-1 | Day 5 | ~Day 7 | First 2-3 PRs work together |
-| INT-2 | Day 9 | ~Day 12 | Extended PR set integration |
-| INT-3 | Day 11 | ~Day 15 | Complete EP functionality |
+| Checkpoint | Working Day | Focus |
+|------------|-------------|-------|
+| INT-1 | Day 5 | First 2-3 PRs work together |
+| INT-2 | Day 9 | Extended PR set integration |
+| INT-3 | Day 11 | Complete EP functionality |
 
 ---
 
 ## Regression Testing
 
-**When**: All PRs merged to master test branch (Working Day 12-13 / Calendar Day 16-18)  
+**When**: All PRs merged to master test branch (Working Day 12-13)  
 **Duration**: 2 working days
 
 | IN SCOPE | OUT OF SCOPE |
@@ -144,11 +143,9 @@ Each PR undergoes the following testing before merge:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    21 CALENDAR DAYS = 15 WORKING DAYS                       │
+│                         15 WORKING DAYS (3 Weeks)                           │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  Week 1          │  Week 2          │  Week 3                               │
-│  Mon-Fri (5 WD)  │  Mon-Fri (5 WD)  │  Mon-Fri (5 WD)                       │
-│  [Sat-Sun off]   │  [Sat-Sun off]   │  [Sat-Sun off]                        │
+│  Week 1 (WD 1-5)  │  Week 2 (WD 6-10)  │  Week 3 (WD 11-15)                 │
 └─────────────────────────────────────────────────────────────────────────────┘
 
 WD = Working Day
