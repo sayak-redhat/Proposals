@@ -1,8 +1,8 @@
 # Manual Federation Testing Guide
 
-**Document Version:** 2.0  
+**Document Version:** 1.0  
 **Last Updated:** January 2026  
-**Author:** QE Team  
+**Author:** Sayak Das  
 **Product:** Zero Trust Workload Identity Manager (ZTWIM)
 
 ---
@@ -16,6 +16,10 @@ This guide provides **step-by-step `oc` commands** for setting up SPIRE federati
 | **Scenario 1** | `https_spiffe` | `https_spiffe` | Internal clusters, testing |
 | **Scenario 2** | `https_spiffe` | `https_web` (ACME) | Mixed: internal + public |
 | **Scenario 3** | `https_spiffe` | `https_web` (cert-manager) | Enterprise PKI |
+
+> **📌 Note: 3-Cluster Setup**  
+> If you need to set up federation across **3 clusters** (with mixed profiles including ACME), refer to the automated script:  
+> 🔗 [3-Cluster Federation Setup Script (with ACME)](https://gist.github.com/rausingh-rh/305cd0f9ae7be9e522e10341fa8b6647)
 
 ---
 
