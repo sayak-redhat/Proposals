@@ -1123,16 +1123,3 @@ oc logs -n ${SPIRE_NS} spire-server-0 -c spire-server --tail=50 | grep -i "acme"
 # 2. Port 443 not accessible from internet
 # 3. Rate limits (use staging URL for testing)
 ```
-
----
-
-## Document History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | Jan 2026 | Initial release |
-| 2.0 | Jan 2026 | Updated with inline federatesWith and 3 scenarios |
-
----
-
-*End of Document*
