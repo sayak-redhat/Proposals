@@ -19,8 +19,7 @@ This guide provides **step-by-step `oc` commands** for setting up SPIRE federati
 
 > **📌 Note: 3-Cluster Setup**  
 > If you need to set up federation across **3 clusters** (with mixed profiles including ACME), refer to the automated script:  
-> 🔗 [3-Cluster Federation Setup Script (with ACME)](https://gist.github.com/rausingh-rh/305cd0f9ae7be9e522e10341fa8b6647) - created by **Raushan Kumar Singh** which is created by Raushan Kumar Singh
- 
+> 🔗 [3-Cluster Federation Setup Document (with ACME)](https://gist.github.com/rausingh-rh/305cd0f9ae7be9e522e10341fa8b6647) - created by **Raushan Kumar Singh**
 
 ---
 
