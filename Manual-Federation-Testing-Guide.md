@@ -1,9 +1,24 @@
 # Manual Federation Testing Guide
 
-**Document Version:** 1.0  
-**Last Updated:** January 2026  
+**Document Version:** 1.2  
+**Last Updated:** January 12, 2026  
 **Author:** Sayak Das  
 **Product:** Zero Trust Workload Identity Manager (ZTWIM)
+
+> **📝 Version 1.2 Updates (Jan 12, 2026):**
+> - Added Step 2.3.1: Bundle bootstrap for Scenario 2 (https_spiffe ↔ https_web ACME)
+> - Added Step 3.3.1: Bundle bootstrap for Scenario 3 (https_spiffe ↔ https_web cert-manager)
+> - Added expected output sections for Scenario 2 verification
+> - Clarified that Cluster 2 → Cluster 1 direction requires bootstrap in Scenarios 2 & 3
+>
+> **📝 Version 1.1 Updates (Jan 12, 2026):**
+> - Fixed CLUSTER_NAME for Cluster 2 (was "cluster1", now "cluster2")
+> - Added critical warning about immutable fields (trustDomain, persistence.size)
+> - Added Step 0.3.1: Configuration verification before deployment
+> - Added Step 1.4.1: Manual bundle bootstrap for https_spiffe scenarios
+> - Updated expected output to show both pre/post bundle bootstrap states
+> - Added troubleshooting for route certificate and validation errors
+> - Added additional verification commands to Quick Reference
 
 ---
 
@@ -66,6 +81,22 @@ openssl version
 
 ## Initial Setup (All Scenarios)
 
+> ⚠️ **CRITICAL WARNING: Immutable Fields**
+> 
+> The following fields are **IMMUTABLE** after creation and cannot be changed with `oc patch` or `oc apply`:
+> - `ZeroTrustWorkloadIdentityManager.spec.trustDomain`
+> - `SpireServer.spec.persistence.size`
+> 
+> If set incorrectly, you must **delete ALL SPIRE resources and recreate them**:
+> ```bash
+> oc delete spireoidcdiscoveryprovider cluster --ignore-not-found
+> oc delete spiffecsidriver cluster --ignore-not-found
+> oc delete spireagent cluster --ignore-not-found
+> oc delete spireserver cluster --ignore-not-found
+> oc delete zerotrustworkloadidentitymanager cluster --ignore-not-found
+> oc delete pvc -n ${SPIRE_NS} -l app.kubernetes.io/name=spire-server --ignore-not-found
+> ```
+
 ### Step 0.1: Open Two Terminals
 
 ```
@@ -109,7 +140,7 @@ export SPIRE_NS="zero-trust-workload-identity-manager"
 export BASE_DOMAIN=$(oc get dns cluster -o jsonpath='{.spec.baseDomain}')
 export APP_DOMAIN="apps.${BASE_DOMAIN}"
 export JWT_ISSUER="oidc-discovery.${APP_DOMAIN}"
-export CLUSTER_NAME="cluster1"
+export CLUSTER_NAME="cluster2"
 
 # Display
 echo "=========================================="
@@ -137,6 +168,34 @@ echo "Will federate with: ${REMOTE_DOMAIN}"
 # Terminal 2 - Set Cluster 1's domain
 export REMOTE_DOMAIN="<PASTE_CLUSTER_1_APP_DOMAIN_HERE>"
 echo "Will federate with: ${REMOTE_DOMAIN}"
+```
+
+### Step 0.3.1: Verify Configuration Before Deploying
+
+> 🔴 **CRITICAL:** The `trustDomain` MUST match the cluster's OWN `APP_DOMAIN`, NOT the remote domain!
+> 
+> | Cluster | trustDomain should be | federatesWith should be |
+> |---------|----------------------|------------------------|
+> | Cluster 1 | Cluster 1's `APP_DOMAIN` | Cluster 2's `APP_DOMAIN` |
+> | Cluster 2 | Cluster 2's `APP_DOMAIN` | Cluster 1's `APP_DOMAIN` |
+
+**Run this verification on BOTH terminals before deploying:**
+
+```bash
+echo "=========================================="
+echo "⚠️  VERIFY BEFORE DEPLOYING"
+echo "=========================================="
+echo ""
+echo "trustDomain will be set to: ${APP_DOMAIN}"
+echo "federatesWith will be set to: ${REMOTE_DOMAIN}"
+echo ""
+echo "✅ Checklist:"
+echo "   1. Is '${APP_DOMAIN}' THIS cluster's domain? (should be YES)"
+echo "   2. Is '${REMOTE_DOMAIN}' the OTHER cluster's domain? (should be YES)"
+echo ""
+echo "If both answers are YES, proceed with deployment."
+echo "If NO, fix your environment variables before continuing!"
+echo "=========================================="
 ```
 
 ### Step 0.4: Install Operator (Both Clusters)
@@ -403,6 +462,93 @@ if [[ $ELAPSED -ge $MAX_WAIT ]]; then
 fi
 ```
 
+## Step 1.4.1: Bootstrap Bundle Exchange (Required for https_spiffe ↔ https_spiffe)
+
+> ⚠️ **IMPORTANT:** When BOTH clusters use `https_spiffe` profile, there is a **chicken-and-egg problem**:
+> - Each cluster needs the OTHER cluster's bundle to perform SPIFFE authentication
+> - Until bundles are manually exchanged, you will see this error in logs:
+>   ```
+>   Error updating bundle: can't perform SPIFFE Authentication: local copy of bundle not found
+>   ```
+> - **Manual bundle exchange is required for initial trust establishment**
+> - Automatic bundle refresh will work AFTER this bootstrap step
+
+### Step 1.4.1.1: Export Bundles from Both Clusters
+
+**Terminal 1 (Cluster 1):**
+
+```bash
+echo "[INFO] Exporting Cluster 1 bundle..."
+oc exec -n ${SPIRE_NS} spire-server-0 -c spire-server -- /spire-server bundle show -format spiffe > /tmp/cluster1-bundle.json
+echo "[INFO] ✅ Bundle saved to /tmp/cluster1-bundle.json"
+echo "[INFO] Bundle size: $(wc -c < /tmp/cluster1-bundle.json) bytes"
+```
+
+**Terminal 2 (Cluster 2):**
+
+```bash
+echo "[INFO] Exporting Cluster 2 bundle..."
+oc exec -n ${SPIRE_NS} spire-server-0 -c spire-server -- /spire-server bundle show -format spiffe > /tmp/cluster2-bundle.json
+echo "[INFO] ✅ Bundle saved to /tmp/cluster2-bundle.json"
+echo "[INFO] Bundle size: $(wc -c < /tmp/cluster2-bundle.json) bytes"
+```
+
+### Step 1.4.1.2: Exchange Bundles Between Clusters
+
+> 📋 **Note:** You need to copy the bundle files between terminals/machines, or use the content directly.
+
+**Option A: If both terminals are on the same machine:**
+
+**Terminal 1 (Load Cluster 2's bundle into Cluster 1):**
+
+```bash
+echo "[INFO] Loading Cluster 2 bundle into Cluster 1..."
+cat /tmp/cluster2-bundle.json | oc exec -i -n ${SPIRE_NS} spire-server-0 -c spire-server -- \
+  /spire-server bundle set -format spiffe -id spiffe://${REMOTE_DOMAIN}
+echo "[INFO] ✅ Cluster 2 bundle loaded into Cluster 1"
+```
+
+**Terminal 2 (Load Cluster 1's bundle into Cluster 2):**
+
+```bash
+echo "[INFO] Loading Cluster 1 bundle into Cluster 2..."
+cat /tmp/cluster1-bundle.json | oc exec -i -n ${SPIRE_NS} spire-server-0 -c spire-server -- \
+  /spire-server bundle set -format spiffe -id spiffe://${REMOTE_DOMAIN}
+echo "[INFO] ✅ Cluster 1 bundle loaded into Cluster 2"
+```
+
+**Option B: If terminals are on different machines:**
+
+1. Copy `/tmp/cluster1-bundle.json` to the machine running Terminal 2
+2. Copy `/tmp/cluster2-bundle.json` to the machine running Terminal 1
+3. Run the load commands above
+
+### Step 1.4.1.3: Verify Bundle Exchange
+
+**Run on BOTH terminals:**
+
+```bash
+echo "[INFO] Verifying bundle exchange..."
+echo ""
+echo "[INFO] Bundle list (should show REMOTE domain):"
+oc exec -n ${SPIRE_NS} spire-server-0 -c spire-server -- /spire-server bundle list | grep "^\*"
+echo ""
+echo "[INFO] Recent bundle logs:"
+oc logs -n ${SPIRE_NS} spire-server-0 -c spire-server --tail=5 | grep -i "bundle"
+```
+
+**Expected Output:**
+```
+[INFO] Bundle list (should show REMOTE domain):
+****************************************
+* apps.remote-cluster.example.com
+****************************************
+
+[INFO] Recent bundle logs:
+time="..." level=info msg="Bundle set successfully" trust_domain_id=apps.remote-cluster.example.com
+time="..." level=info msg="Bundle refreshed" trust_domain=apps.remote-cluster.example.com
+```
+
 ## Step 1.5: Verify Federation (Both Clusters)
 
 **Run on BOTH terminals:**
@@ -437,7 +583,7 @@ oc logs -n ${SPIRE_NS} spire-server-0 -c spire-server --tail=10 | grep -i "bundl
 echo "=========================================="
 ```
 
-**Expected Output:**
+**Expected Output (Before Bundle Bootstrap - Step 1.4.1):**
 ```
 ==========================================
       FEDERATION VERIFICATION            
@@ -454,9 +600,38 @@ spire-server-federation   federation.apps.xxx.example.com     passthrough
 {"keys":[{"use":"x509-svid","kty":"RSA",...
 
 [INFO] 4. SPIRE Server Bundle List (should show REMOTE domain):
-* apps.remote-cluster.example.com
+(empty - no remote bundles yet)
 
 [INFO] 5. Bundle Refresh Logs:
+time="..." level=error msg="Error updating bundle" error="can't perform SPIFFE Authentication: local copy of bundle not found"
+==========================================
+```
+
+> ⚠️ If you see the error above, **complete Step 1.4.1 (Bundle Bootstrap)** before continuing!
+
+**Expected Output (After Bundle Bootstrap - Step 1.4.1):**
+```
+==========================================
+      FEDERATION VERIFICATION            
+==========================================
+
+[INFO] 1. Federation Route:
+NAME                      HOST/PORT                           TERMINATION
+spire-server-federation   federation.apps.xxx.example.com     passthrough
+
+[INFO] 2. Test Local Bundle Endpoint:
+{"keys":[{"use":"x509-svid","kty":"RSA",...
+
+[INFO] 3. Test Remote Bundle Endpoint:
+{"keys":[{"use":"x509-svid","kty":"RSA",...
+
+[INFO] 4. SPIRE Server Bundle List (should show REMOTE domain):
+****************************************
+* apps.remote-cluster.example.com
+****************************************
+
+[INFO] 5. Bundle Refresh Logs:
+time="..." level=info msg="Bundle set successfully" trust_domain_id=apps.remote-cluster.example.com
 time="..." level=info msg="Bundle refreshed" trust_domain=apps.remote-cluster.example.com
 ==========================================
 ```
@@ -681,6 +856,37 @@ echo "[INFO] Checking ACME status in logs:"
 oc logs -n ${SPIRE_NS} spire-server-0 -c spire-server --tail=30 | grep -i "acme\|cert"
 ```
 
+## Step 2.3.1: Bootstrap Cluster 1's Bundle into Cluster 2 (Required)
+
+> ⚠️ **IMPORTANT:** Even though Cluster 2 uses https_web (ACME), it still federates **with** Cluster 1's `https_spiffe` endpoint.
+> 
+> - **Cluster 1 → Cluster 2:** Works automatically (https_web uses trusted CA, no SPIFFE auth needed)
+> - **Cluster 2 → Cluster 1:** Requires manual bootstrap (https_spiffe requires SPIFFE authentication)
+>
+> Without this step, Cluster 2 will show:
+> ```
+> Error updating bundle: can't perform SPIFFE Authentication: local copy of bundle not found
+> ```
+
+**Terminal 1 (Export Cluster 1's bundle):**
+
+```bash
+echo "[INFO] Exporting Cluster 1 bundle..."
+oc exec -n ${SPIRE_NS} spire-server-0 -c spire-server -- /spire-server bundle show -format spiffe > /tmp/cluster1-bundle.json
+echo "[INFO] ✅ Bundle saved to /tmp/cluster1-bundle.json"
+```
+
+**Terminal 2 (Load Cluster 1's bundle into Cluster 2):**
+
+```bash
+echo "[INFO] Loading Cluster 1 bundle into Cluster 2..."
+cat /tmp/cluster1-bundle.json | oc exec -i -n ${SPIRE_NS} spire-server-0 -c spire-server -- \
+  /spire-server bundle set -format spiffe -id spiffe://${REMOTE_DOMAIN}
+echo "[INFO] ✅ Cluster 1 bundle loaded into Cluster 2"
+```
+
+> 📝 **Note:** Only ONE direction needs bootstrap in Scenario 2, unlike Scenario 1 where BOTH directions need bootstrap.
+
 ## Step 2.4: Verify Federation
 
 **Terminal 1 (Cluster 1 - https_spiffe):**
@@ -711,6 +917,44 @@ echo ""
 echo ""
 echo "[INFO] Bundle List (should show Cluster 1):"
 oc exec -n ${SPIRE_NS} spire-server-0 -c spire-server -- /spire-server bundle list | grep "^\*"
+
+echo ""
+echo "[INFO] Bundle Refresh Logs:"
+oc logs -n ${SPIRE_NS} spire-server-0 -c spire-server --tail=5 | grep -i "bundle"
+```
+
+**Expected Output (Cluster 1 - after ACME cert issued):**
+```
+[INFO] Test Cluster 2's ACME endpoint (no -k needed!):
+{"keys":[{"use":"x509-svid","kty":"RSA",...
+
+[INFO] Bundle List (should show Cluster 2):
+****************************************
+* apps.cluster2.example.com
+****************************************
+```
+
+**Expected Output (Cluster 2 - BEFORE Step 2.3.1 Bootstrap):**
+```
+[INFO] Bundle List (should show Cluster 1):
+(empty - no remote bundles yet)
+
+[INFO] Bundle Refresh Logs:
+time="..." level=error msg="Error updating bundle" error="can't perform SPIFFE Authentication: local copy of bundle not found"
+```
+
+> ⚠️ If you see the error above, **complete Step 2.3.1 (Bootstrap)** before continuing!
+
+**Expected Output (Cluster 2 - AFTER Step 2.3.1 Bootstrap):**
+```
+[INFO] Bundle List (should show Cluster 1):
+****************************************
+* apps.cluster1.example.com
+****************************************
+
+[INFO] Bundle Refresh Logs:
+time="..." level=info msg="Bundle set successfully" trust_domain_id=apps.cluster1.example.com
+time="..." level=info msg="Bundle refreshed" trust_domain=apps.cluster1.example.com
 ```
 
 ---
@@ -939,6 +1183,30 @@ EOF
 echo "[INFO] ✅ Cluster 2 SPIRE resources deployed (https_web with cert-manager)"
 ```
 
+## Step 3.3.1: Bootstrap Cluster 1's Bundle into Cluster 2 (Required)
+
+> ⚠️ **IMPORTANT:** Same as Scenario 2 - Cluster 2 federates **with** Cluster 1's `https_spiffe` endpoint, which requires SPIFFE authentication.
+> 
+> - **Cluster 1 → Cluster 2:** Works automatically (https_web uses standard TLS)
+> - **Cluster 2 → Cluster 1:** Requires manual bootstrap (https_spiffe requires SPIFFE authentication)
+
+**Terminal 1 (Export Cluster 1's bundle):**
+
+```bash
+echo "[INFO] Exporting Cluster 1 bundle..."
+oc exec -n ${SPIRE_NS} spire-server-0 -c spire-server -- /spire-server bundle show -format spiffe > /tmp/cluster1-bundle.json
+echo "[INFO] ✅ Bundle saved to /tmp/cluster1-bundle.json"
+```
+
+**Terminal 2 (Load Cluster 1's bundle into Cluster 2):**
+
+```bash
+echo "[INFO] Loading Cluster 1 bundle into Cluster 2..."
+cat /tmp/cluster1-bundle.json | oc exec -i -n ${SPIRE_NS} spire-server-0 -c spire-server -- \
+  /spire-server bundle set -format spiffe -id spiffe://${REMOTE_DOMAIN}
+echo "[INFO] ✅ Cluster 1 bundle loaded into Cluster 2"
+```
+
 ## Step 3.4: Wait and Verify
 
 **Run on BOTH terminals:**
@@ -1074,9 +1342,14 @@ echo "[INFO] ✅ Operator removed"
 | Check SPIRE health | `oc exec -n ${SPIRE_NS} spire-server-0 -c spire-server -- /spire-server healthcheck` |
 | List bundles | `oc exec -n ${SPIRE_NS} spire-server-0 -c spire-server -- /spire-server bundle list` |
 | Show entries | `oc exec -n ${SPIRE_NS} spire-server-0 -c spire-server -- /spire-server entry show` |
+| Export bundle | `oc exec -n ${SPIRE_NS} spire-server-0 -c spire-server -- /spire-server bundle show -format spiffe` |
 | Check route | `oc get route spire-server-federation -n ${SPIRE_NS}` |
 | Test endpoint | `curl -k https://federation.${APP_DOMAIN}` |
 | Check logs | `oc logs -n ${SPIRE_NS} spire-server-0 -c spire-server --tail=50` |
+| Verify trustDomain | `oc get zerotrustworkloadidentitymanager cluster -o jsonpath='{.spec.trustDomain}'` |
+| Verify federation config | `oc get spireserver cluster -o yaml \| grep -A 20 "federation:"` |
+| Check SpireServer status | `oc get spireserver cluster -o jsonpath='{.status.conditions[0].message}'` |
+| Verify endpoint certificate | `echo \| openssl s_client -connect federation.${APP_DOMAIN}:443 2>/dev/null \| openssl x509 -noout -text \| grep -A 1 "Subject Alternative Name"` |
 
 ## Troubleshooting
 
@@ -1111,6 +1384,85 @@ oc logs -n ${SPIRE_NS} spire-server-0 -c spire-server --tail=50 | grep -i "error
 # Verify remote endpoint is reachable
 curl -kv https://federation.${REMOTE_DOMAIN}
 ```
+
+### Bundle Not Refreshing (https_spiffe): "local copy of bundle not found"
+
+**Symptoms:**
+```
+Error updating bundle: can't perform SPIFFE Authentication: local copy of bundle not found
+```
+
+**Cause:** When both clusters use `https_spiffe`, manual bundle bootstrap is required first.
+
+**Solution:** Complete Step 1.4.1 (Bootstrap Bundle Exchange) to manually exchange bundles.
+
+### Route Serving Wrong Certificate (Wildcard Instead of SPIFFE)
+
+**Symptoms:**
+```bash
+# Check what certificate the federation endpoint is serving
+echo | openssl s_client -connect federation.${APP_DOMAIN}:443 \
+  -servername federation.${APP_DOMAIN} 2>/dev/null | \
+  openssl x509 -noout -text | grep -A 1 "Subject Alternative Name"
+
+# ❌ WRONG - Shows OpenShift wildcard:
+# X509v3 Subject Alternative Name:
+#     DNS:*.apps.example.com
+
+# ✅ CORRECT - Should show SPIFFE URI:
+# X509v3 Subject Alternative Name:
+#     URI:spiffe://apps.example.com/spire/server
+```
+
+**Cause:** The `trustDomain` in `ZeroTrustWorkloadIdentityManager` doesn't match the cluster's actual domain. This causes:
+- Routes to be created with wrong hostnames
+- OpenShift router to serve its wildcard certificate instead of passing through
+
+**Diagnosis:**
+```bash
+# Check current trustDomain
+echo "Current trustDomain:"
+oc get zerotrustworkloadidentitymanager cluster -o jsonpath='{.spec.trustDomain}'
+echo ""
+
+# Check cluster's actual domain
+echo "Cluster's actual domain:"
+echo "apps.$(oc get dns cluster -o jsonpath='{.spec.baseDomain}')"
+
+# These MUST match!
+```
+
+**Solution:** If trustDomain doesn't match, delete all SPIRE resources and recreate with correct values:
+```bash
+# 1. Delete all SPIRE resources
+oc delete spireoidcdiscoveryprovider cluster --ignore-not-found
+oc delete spiffecsidriver cluster --ignore-not-found
+oc delete spireagent cluster --ignore-not-found
+oc delete spireserver cluster --ignore-not-found
+oc delete zerotrustworkloadidentitymanager cluster --ignore-not-found
+oc delete pvc -n ${SPIRE_NS} -l app.kubernetes.io/name=spire-server --ignore-not-found
+
+# 2. Wait for cleanup
+sleep 30
+
+# 3. Verify environment variables are correct
+echo "APP_DOMAIN: ${APP_DOMAIN}"
+echo "REMOTE_DOMAIN: ${REMOTE_DOMAIN}"
+
+# 4. Redeploy with correct configuration
+```
+
+### SpireServer Validation Error: "cannot federate with own trust domain"
+
+**Symptoms:**
+```bash
+oc get spireserver cluster -o jsonpath='{.status.conditions[0].message}'
+# Output: Federation configuration validation failed: federatesWith[0]: cannot federate with own trust domain ...
+```
+
+**Cause:** The `trustDomain` is set to the REMOTE cluster's domain instead of the LOCAL cluster's domain.
+
+**Solution:** Same as above - delete and recreate with correct `trustDomain` matching the cluster's own `APP_DOMAIN`.
 
 ### ACME Certificate Not Issued
 
