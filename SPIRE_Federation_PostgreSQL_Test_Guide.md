@@ -28,8 +28,7 @@ This document provides step-by-step instructions to test SPIRE-to-SPIRE federati
 ### Cluster Requirements
 | Requirement | Details |
 |-------------|---------|
-| OpenShift Version | 4.14+ recommended |
-| Operator | Zero Trust Workload Identity Manager v1.0.0+ |
+| OpenShift Version | 4.20 |
 | Storage | Default StorageClass for PVC provisioning |
 
 ---
