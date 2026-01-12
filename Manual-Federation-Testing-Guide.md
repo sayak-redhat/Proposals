@@ -1,16 +1,10 @@
 # Manual Federation Testing Guide
 
-**Document Version:** 1.2  
+**Document Version:** 1.1  
 **Last Updated:** January 12, 2026  
 **Author:** Sayak Das  
 **Product:** Zero Trust Workload Identity Manager (ZTWIM)
 
-> **📝 Version 1.2 Updates (Jan 12, 2026):**
-> - Added Step 2.3.1: Bundle bootstrap for Scenario 2 (https_spiffe ↔ https_web ACME)
-> - Added Step 3.3.1: Bundle bootstrap for Scenario 3 (https_spiffe ↔ https_web cert-manager)
-> - Added expected output sections for Scenario 2 verification
-> - Clarified that Cluster 2 → Cluster 1 direction requires bootstrap in Scenarios 2 & 3
->
 > **📝 Version 1.1 Updates (Jan 12, 2026):**
 > - Fixed CLUSTER_NAME for Cluster 2 (was "cluster1", now "cluster2")
 > - Added critical warning about immutable fields (trustDomain, persistence.size)
@@ -856,37 +850,6 @@ echo "[INFO] Checking ACME status in logs:"
 oc logs -n ${SPIRE_NS} spire-server-0 -c spire-server --tail=30 | grep -i "acme\|cert"
 ```
 
-## Step 2.3.1: Bootstrap Cluster 1's Bundle into Cluster 2 (Required)
-
-> ⚠️ **IMPORTANT:** Even though Cluster 2 uses https_web (ACME), it still federates **with** Cluster 1's `https_spiffe` endpoint.
-> 
-> - **Cluster 1 → Cluster 2:** Works automatically (https_web uses trusted CA, no SPIFFE auth needed)
-> - **Cluster 2 → Cluster 1:** Requires manual bootstrap (https_spiffe requires SPIFFE authentication)
->
-> Without this step, Cluster 2 will show:
-> ```
-> Error updating bundle: can't perform SPIFFE Authentication: local copy of bundle not found
-> ```
-
-**Terminal 1 (Export Cluster 1's bundle):**
-
-```bash
-echo "[INFO] Exporting Cluster 1 bundle..."
-oc exec -n ${SPIRE_NS} spire-server-0 -c spire-server -- /spire-server bundle show -format spiffe > /tmp/cluster1-bundle.json
-echo "[INFO] ✅ Bundle saved to /tmp/cluster1-bundle.json"
-```
-
-**Terminal 2 (Load Cluster 1's bundle into Cluster 2):**
-
-```bash
-echo "[INFO] Loading Cluster 1 bundle into Cluster 2..."
-cat /tmp/cluster1-bundle.json | oc exec -i -n ${SPIRE_NS} spire-server-0 -c spire-server -- \
-  /spire-server bundle set -format spiffe -id spiffe://${REMOTE_DOMAIN}
-echo "[INFO] ✅ Cluster 1 bundle loaded into Cluster 2"
-```
-
-> 📝 **Note:** Only ONE direction needs bootstrap in Scenario 2, unlike Scenario 1 where BOTH directions need bootstrap.
-
 ## Step 2.4: Verify Federation
 
 **Terminal 1 (Cluster 1 - https_spiffe):**
@@ -917,44 +880,6 @@ echo ""
 echo ""
 echo "[INFO] Bundle List (should show Cluster 1):"
 oc exec -n ${SPIRE_NS} spire-server-0 -c spire-server -- /spire-server bundle list | grep "^\*"
-
-echo ""
-echo "[INFO] Bundle Refresh Logs:"
-oc logs -n ${SPIRE_NS} spire-server-0 -c spire-server --tail=5 | grep -i "bundle"
-```
-
-**Expected Output (Cluster 1 - after ACME cert issued):**
-```
-[INFO] Test Cluster 2's ACME endpoint (no -k needed!):
-{"keys":[{"use":"x509-svid","kty":"RSA",...
-
-[INFO] Bundle List (should show Cluster 2):
-****************************************
-* apps.cluster2.example.com
-****************************************
-```
-
-**Expected Output (Cluster 2 - BEFORE Step 2.3.1 Bootstrap):**
-```
-[INFO] Bundle List (should show Cluster 1):
-(empty - no remote bundles yet)
-
-[INFO] Bundle Refresh Logs:
-time="..." level=error msg="Error updating bundle" error="can't perform SPIFFE Authentication: local copy of bundle not found"
-```
-
-> ⚠️ If you see the error above, **complete Step 2.3.1 (Bootstrap)** before continuing!
-
-**Expected Output (Cluster 2 - AFTER Step 2.3.1 Bootstrap):**
-```
-[INFO] Bundle List (should show Cluster 1):
-****************************************
-* apps.cluster1.example.com
-****************************************
-
-[INFO] Bundle Refresh Logs:
-time="..." level=info msg="Bundle set successfully" trust_domain_id=apps.cluster1.example.com
-time="..." level=info msg="Bundle refreshed" trust_domain=apps.cluster1.example.com
 ```
 
 ---
@@ -1181,30 +1106,6 @@ spec:
 EOF
 
 echo "[INFO] ✅ Cluster 2 SPIRE resources deployed (https_web with cert-manager)"
-```
-
-## Step 3.3.1: Bootstrap Cluster 1's Bundle into Cluster 2 (Required)
-
-> ⚠️ **IMPORTANT:** Same as Scenario 2 - Cluster 2 federates **with** Cluster 1's `https_spiffe` endpoint, which requires SPIFFE authentication.
-> 
-> - **Cluster 1 → Cluster 2:** Works automatically (https_web uses standard TLS)
-> - **Cluster 2 → Cluster 1:** Requires manual bootstrap (https_spiffe requires SPIFFE authentication)
-
-**Terminal 1 (Export Cluster 1's bundle):**
-
-```bash
-echo "[INFO] Exporting Cluster 1 bundle..."
-oc exec -n ${SPIRE_NS} spire-server-0 -c spire-server -- /spire-server bundle show -format spiffe > /tmp/cluster1-bundle.json
-echo "[INFO] ✅ Bundle saved to /tmp/cluster1-bundle.json"
-```
-
-**Terminal 2 (Load Cluster 1's bundle into Cluster 2):**
-
-```bash
-echo "[INFO] Loading Cluster 1 bundle into Cluster 2..."
-cat /tmp/cluster1-bundle.json | oc exec -i -n ${SPIRE_NS} spire-server-0 -c spire-server -- \
-  /spire-server bundle set -format spiffe -id spiffe://${REMOTE_DOMAIN}
-echo "[INFO] ✅ Cluster 1 bundle loaded into Cluster 2"
 ```
 
 ## Step 3.4: Wait and Verify
