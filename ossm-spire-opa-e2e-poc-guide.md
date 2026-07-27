@@ -13,23 +13,24 @@
 ## Table of Contents
 
 1. [Motive of this POC](#1-motive-of-this-poc)
-2. [High-level workflow (read this first)](#2-high-level-workflow-read-this-first)
-3. [Concepts (beginner friendly)](#3-concepts-beginner-friendly)
-4. [What we prove](#4-what-we-prove)
-5. [Architecture](#5-architecture)
-6. [Prerequisites](#6-prerequisites)
-7. [Environment variables](#7-environment-variables)
-8. [Phase 1 — Install ZTWIM + SPIRE on both clusters](#8-phase-1--install-ztwim--spire-on-both-clusters)
-9. [Phase 2 — Federate the two SPIRE trust domains](#9-phase-2--federate-the-two-spire-trust-domains)
-10. [Phase 3 — Install Red Hat Service Mesh + IstioCNI](#10-phase-3--install-red-hat-service-mesh--istiocni)
-11. [Phase 4 — Deploy Istio with SPIRE](#11-phase-4--deploy-istio-with-spire)
-12. [Phase 5 — Federated identities + East-West gateway](#12-phase-5--federated-identities--east-west-gateway)
-13. [Phase 6 — Exchange remote secrets](#13-phase-6--exchange-remote-secrets)
-14. [Phase 7 — Prove cross-cluster SPIRE mTLS](#14-phase-7--prove-cross-cluster-spire-mtls)
-15. [Phase 8 — Add OPA authorization](#15-phase-8--add-opa-authorization)
-16. [Phase 9 — Final success tests](#16-phase-9--final-success-tests)
-17. [Quick map: who runs where](#17-quick-map-who-runs-where)
-18. [Success checklist](#18-success-checklist)
+2. [What This Means For Your Organization](#2-what-this-means-for-your-organization)
+3. [High-level workflow (read this first)](#3-high-level-workflow-read-this-first)
+4. [Concepts (beginner friendly)](#4-concepts-beginner-friendly)
+5. [What we prove](#5-what-we-prove)
+6. [Architecture](#6-architecture)
+7. [Prerequisites](#7-prerequisites)
+8. [Environment variables](#8-environment-variables)
+9. [Phase 1 — Install ZTWIM + SPIRE on both clusters](#9-phase-1--install-ztwim--spire-on-both-clusters)
+10. [Phase 2 — Federate the two SPIRE trust domains](#10-phase-2--federate-the-two-spire-trust-domains)
+11. [Phase 3 — Install Red Hat Service Mesh + IstioCNI](#11-phase-3--install-red-hat-service-mesh--istiocni)
+12. [Phase 4 — Deploy Istio with SPIRE](#12-phase-4--deploy-istio-with-spire)
+13. [Phase 5 — Federated identities + East-West gateway](#13-phase-5--federated-identities--east-west-gateway)
+14. [Phase 6 — Exchange remote secrets](#14-phase-6--exchange-remote-secrets)
+15. [Phase 7 — Prove cross-cluster SPIRE mTLS](#15-phase-7--prove-cross-cluster-spire-mtls)
+16. [Phase 8 — Add OPA authorization](#16-phase-8--add-opa-authorization)
+17. [Phase 9 — Final success tests](#17-phase-9--final-success-tests)
+18. [Quick map: who runs where](#18-quick-map-who-runs-where)
+19. [Success checklist](#19-success-checklist)
 
 ---
 
@@ -54,7 +55,46 @@ This is zero-trust style: never trust by network location alone; trust identity 
 
 ---
 
-## 2. High-level workflow (read this first)
+## 2. What This Means For Your Organization
+
+### For Security Teams: Zero-trust enforcement without application changes
+
+This architecture enforces zero-trust authorization at the infrastructure layer. Application code makes a plain HTTP call — it has no awareness of certificates, mTLS, or authorization policies. All of the following happen transparently, outside the application:
+
+- SPIRE issues and rotates certificates automatically — no secrets to manage, no key distribution, no manual rotation.
+- Envoy handles mTLS and certificate validation — applications never touch TLS configuration.
+- OPA evaluates authorization policy — applications don't implement access control logic.
+
+This means security teams can change who is allowed to call what — without filing a ticket to the application team, without a code change, without a redeployment. Update the Rego policy in the OPA ConfigMap, and enforcement changes immediately. Security posture is managed as policy, not as application code.
+
+### For Application Owners: You don't need to do anything
+
+In a traditional model, if the security team says "service A should only accept requests from service B," the application team has to implement that — check an API key, validate a JWT, verify a header. That's security logic embedded in business logic, and it has to be maintained, tested, and updated by the app team.
+
+In this architecture, the application owner deploys their service with a sidecar annotation. That's it. The application:
+
+- Does not need to handle TLS or certificates.
+- Does not need to validate caller identity.
+- Does not need to implement authorization checks.
+- Does not need to change when access policies change.
+
+The frontend service just calls `http://backend.sample:8080`. It doesn't know it's crossing a cluster boundary. It doesn't know its identity is being cryptographically verified. It doesn't know OPA is checking whether it's allowed. All of that is handled by the platform.
+
+### For Platform / Operations Teams: One consistent model everywhere
+
+Today, different teams solve service-to-service authorization differently — some use network policies, some use shared secrets, some use service-specific API keys, some use JWTs. Each approach has its own management overhead, rotation strategy, and failure modes.
+
+This architecture replaces all of that with one model:
+
+- One identity system (SPIRE) — every workload gets a SPIFFE ID, issued and rotated automatically.
+- One transport security model (mTLS via mesh) — same encryption and identity propagation for same-cluster and cross-cluster traffic.
+- One authorization engine (OPA) — all access policies in one place, written in one language (Rego), evaluated consistently.
+
+When a new service is deployed, it automatically gets an identity and is subject to policy. When a service is decommissioned, its identity stops being issued. No cleanup of API keys, no revocation of shared secrets, no updating of allow-lists in other services.
+
+---
+
+## 3. High-level workflow (read this first)
 
 Same style as a nested-SPIRE story, but for **this** multi-cluster SPIRE + OSSM + OPA POC.
 
@@ -168,7 +208,7 @@ OPA Rego
 
 ---
 
-## 3. Concepts (beginner friendly)
+## 4. Concepts (beginner friendly)
 
 ### AuthN vs AuthZ (read this — easy to confuse)
 
@@ -271,7 +311,7 @@ OSSM does not replace AuthN/AuthZ — it is the **transport path** that carries 
 OPA does **not** issue identities. It only decides after SPIRE/Envoy have already authenticated the caller.
 ---
 
-## 4. What we prove
+## 5. What we prove
 
 | Gate | Proof |
 |---|---|
@@ -285,7 +325,7 @@ OPA does **not** issue identities. It only decides after SPIRE/Envoy have alread
 
 ---
 
-## 5. Architecture
+## 6. Architecture
 
 ```text
 CLUSTER 1 (A)                                      CLUSTER 2 (B)
@@ -315,7 +355,7 @@ Trust domain: apps....clu1...                      Trust domain: apps....clu2...
 
 ---
 
-## 6. Prerequisites
+## 7. Prerequisites
 
 - Two OpenShift clusters with `system:admin` access
 - `oc`, `helm`, `istioctl`, `jq`, `curl` on your laptop
@@ -331,7 +371,7 @@ export CLUSTER2=/path/to/cluster2/aws/auth/kubeconfig   # Cluster B
 
 ---
 
-## 7. Environment variables
+## 8. Environment variables
 
 Run this on your laptop once. Replace domains if yours differ.
 
@@ -373,14 +413,18 @@ B = apps.<your-prefix>-clu2.qe.devcluster.openshift.com
 
 ---
 
-## 8. Phase 1 — Install ZTWIM + SPIRE on both clusters
+## 9. Phase 1 — Install ZTWIM + SPIRE on both clusters
 
-### 8.1 Install ZTWIM Operator (do on Cluster 1, then Cluster 2)
+> **Why this matters:** Without cryptographic identity, workloads can only be identified by IP address or shared secrets — both of which can be spoofed or leaked. SPIRE gives every pod a short-lived X.509 certificate (a SPIFFE ID) that proves *who it is*, issued automatically and rotated without human intervention. This is the foundation that every later step builds on: federation, mTLS, and OPA authorization all depend on workloads having a verifiable identity.
+
+### 9.1 Install ZTWIM Operator (do on Cluster 1, then Cluster 2)
 
 **What it does:** Installs the operator that will create SPIRE components.
 
+**Cluster 1:**
+
 ```bash
-export KUBECONFIG="$CLUSTER1"   # then repeat with $CLUSTER2
+export KUBECONFIG="$CLUSTER1"
 
 oc apply -f - <<EOF
 apiVersion: v1
@@ -402,7 +446,7 @@ metadata:
   name: openshift-zero-trust-workload-identity-manager
   namespace: zero-trust-workload-identity-manager
 spec:
-  channel: tech-preview-v0.2
+  channel: stable-v1
   name: openshift-zero-trust-workload-identity-manager
   source: redhat-operators
   sourceNamespace: openshift-marketplace
@@ -412,14 +456,49 @@ oc get csv -n ${ZTWIM_NS}
 oc get po -n ${ZTWIM_NS}
 ```
 
-**Expected:**
+**Cluster 2:**
+
+```bash
+export KUBECONFIG="$CLUSTER2"
+
+oc apply -f - <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: zero-trust-workload-identity-manager
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: zero-trust-workload-identity-manager-og
+  namespace: zero-trust-workload-identity-manager
+spec:
+  upgradeStrategy: Default
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: openshift-zero-trust-workload-identity-manager
+  namespace: zero-trust-workload-identity-manager
+spec:
+  channel: stable-v1
+  name: openshift-zero-trust-workload-identity-manager
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+EOF
+
+oc get csv -n ${ZTWIM_NS}
+oc get po -n ${ZTWIM_NS}
+```
+
+**Expected (each cluster):**
 
 ```text
 CSV ... Succeeded
 zero-trust-workload-identity-manager-controller-manager-...  1/1  Running
 ```
 
-### 8.2 Deploy SPIRE with federation enabled
+### 9.2 Deploy SPIRE with federation enabled
 
 **Cluster 1** (use A variables):
 
@@ -493,9 +572,79 @@ spec:
 EOF
 ```
 
-**Cluster 2:** same YAML with `CLUSTER_B_*` / `JWT_ISSUER_B`.
+**Cluster 2** (use B variables):
 
-Wait:
+```bash
+export KUBECONFIG="$CLUSTER2"
+
+oc apply -f - <<EOF
+apiVersion: operator.openshift.io/v1alpha1
+kind: ZeroTrustWorkloadIdentityManager
+metadata:
+  name: cluster
+spec:
+  trustDomain: ${CLUSTER_B_TRUST_DOMAIN}
+  clusterName: ${CLUSTER_B}
+---
+apiVersion: operator.openshift.io/v1alpha1
+kind: SpireServer
+metadata:
+  name: cluster
+spec:
+  trustDomain: ${CLUSTER_B_TRUST_DOMAIN}
+  clusterName: ${CLUSTER_B}
+  caSubject:
+    commonName: ${CLUSTER_B_TRUST_DOMAIN}
+    country: "US"
+    organization: "RH"
+  persistence:
+    type: pvc
+    size: "2Gi"
+    accessMode: ReadWriteOncePod
+  datastore:
+    databaseType: sqlite3
+    connectionString: "/run/spire/data/datastore.sqlite3"
+    maxOpenConns: 100
+    maxIdleConns: 2
+    connMaxLifetime: 3600
+  jwtIssuer: ${JWT_ISSUER_B}
+  federation:
+    enabled: true
+    bundleEndpoint:
+      address: "0.0.0.0"
+      port: 8443
+---
+apiVersion: operator.openshift.io/v1alpha1
+kind: SpireAgent
+metadata:
+  name: cluster
+spec:
+  trustDomain: ${CLUSTER_B_TRUST_DOMAIN}
+  clusterName: ${CLUSTER_B}
+  nodeAttestor:
+    k8sPSATEnabled: "true"
+  workloadAttestors:
+    k8sEnabled: "true"
+    workloadAttestorsVerification:
+      type: "auto"
+---
+apiVersion: operator.openshift.io/v1alpha1
+kind: SpiffeCSIDriver
+metadata:
+  name: cluster
+spec: {}
+---
+apiVersion: operator.openshift.io/v1alpha1
+kind: SpireOIDCDiscoveryProvider
+metadata:
+  name: cluster
+spec:
+  trustDomain: ${CLUSTER_B_TRUST_DOMAIN}
+  jwtIssuer: ${JWT_ISSUER_B}
+EOF
+```
+
+Wait (run on **each** cluster):
 
 ```bash
 oc rollout status statefulset/spire-server -n ${ZTWIM_NS} --timeout=300s
@@ -527,9 +676,11 @@ spire-server-federation   federation.apps.<your-domain>   ...   passthrough
 
 ---
 
-## 9. Phase 2 — Federate the two SPIRE trust domains
+## 10. Phase 2 — Federate the two SPIRE trust domains
 
-### 9.1 Create ClusterFederatedTrustDomain (CFTD)
+> **Why this matters:** Each cluster has its own SPIRE CA, and by default they don't trust each other — a certificate from Cluster A means nothing to Cluster B. Federation solves this by having each SPIRE server learn the other's root CA certificate. Once both sides exchange trust bundles, a workload on Cluster A can present its SPIFFE certificate to Cluster B and be *recognized* as legitimate. Without this step, cross-cluster mTLS would fail because neither side would accept the other's certificates.
+
+### 10.1 Create ClusterFederatedTrustDomain (CFTD)
 
 **What it does:** Tells local SPIRE “trust the other cluster and fetch its bundle.”
 
@@ -598,7 +749,7 @@ Trust domain : apps....<peer>...
 
 > Note: SPIRE binary path in this image is `/spire-server` (not on `$PATH`).
 
-### 9.2 Bootstrap peer bundles (required for `https_spiffe`)
+### 10.2 Bootstrap peer bundles (required for `https_spiffe`)
 
 **What it does:** Seeds the peer CA so SPIFFE auth to the federation endpoint can start.
 
@@ -621,9 +772,26 @@ oc exec -n ${ZTWIM_NS} spire-server-0 -c spire-server -- \
   /spire-server bundle list -socketPath /tmp/spire-server/private/api.sock
 ```
 
-**On Cluster 2:** same with Cluster 1 endpoint / trust domain.
+**On Cluster 2:**
 
-**Expected:**
+```bash
+export KUBECONFIG="$CLUSTER2"
+
+oc exec -n ${ZTWIM_NS} spire-server-0 -c spire-server -- \
+  curl -sk -o /tmp/cluster1-bundle.json "${FEDERATION_ENDPOINT_A}"
+
+oc exec -n ${ZTWIM_NS} spire-server-0 -c spire-server -- \
+  /spire-server bundle set \
+  -id ${CLUSTER_A_TRUST_DOMAIN} \
+  -path /tmp/cluster1-bundle.json \
+  -format spiffe \
+  -socketPath /tmp/spire-server/private/api.sock
+
+oc exec -n ${ZTWIM_NS} spire-server-0 -c spire-server -- \
+  /spire-server bundle list -socketPath /tmp/spire-server/private/api.sock
+```
+
+**Expected (each cluster):**
 
 ```text
 bundle set.
@@ -636,14 +804,18 @@ bundle set.
 
 ---
 
-## 10. Phase 3 — Install Red Hat Service Mesh + IstioCNI
+## 11. Phase 3 — Install Red Hat Service Mesh + IstioCNI
 
-### 10.1 Service Mesh Operator (both clusters)
+> **Why this matters:** SPIRE can issue certificates, but something needs to *use* them in actual network traffic. The service mesh (Istio/Envoy sidecars) is that layer — it transparently intercepts all pod traffic and wraps it in mTLS using the SPIRE-issued certificates. Without a mesh, applications would need to implement TLS themselves, load SPIRE certs manually, and handle certificate rotation in their own code. IstioCNI configures node-level networking so Envoy sidecars can intercept traffic without requiring privileged init containers.
+
+### 11.1 Service Mesh Operator (both clusters)
 
 **What it does:** Installs the operator that can create `Istio` / `IstioCNI` CRs. It does **not** create the mesh yet.
 
+**Cluster 1:**
+
 ```bash
-export KUBECONFIG="$CLUSTER1"   # then $CLUSTER2
+export KUBECONFIG="$CLUSTER1"
 
 oc apply -f - <<EOF
 apiVersion: operators.coreos.com/v1alpha1
@@ -661,18 +833,41 @@ EOF
 oc get csv -n openshift-operators | grep -i servicemesh
 ```
 
-**Expected:**
+**Cluster 2:**
+
+```bash
+export KUBECONFIG="$CLUSTER2"
+
+oc apply -f - <<EOF
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: servicemeshoperator3
+  namespace: openshift-operators
+spec:
+  channel: stable
+  name: servicemeshoperator3
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+EOF
+
+oc get csv -n openshift-operators | grep -i servicemesh
+```
+
+**Expected (each cluster):**
 
 ```text
 servicemeshoperator3.v3.4.0   Red Hat OpenShift Service Mesh 3   ...   Succeeded
 ```
 
-### 10.2 IstioCNI (both clusters)
+### 11.2 IstioCNI (both clusters)
 
 **What it does:** Node DaemonSet that configures pod networking so sidecars can intercept traffic.
 
+**Cluster 1:**
+
 ```bash
-export KUBECONFIG="$CLUSTER1"   # then $CLUSTER2
+export KUBECONFIG="$CLUSTER1"
 
 oc new-project istio-cni 2>/dev/null || true
 
@@ -691,7 +886,29 @@ oc rollout status daemonset/istio-cni-node -n istio-cni --timeout=300s
 oc get po -n istio-cni
 ```
 
-**Expected:**
+**Cluster 2:**
+
+```bash
+export KUBECONFIG="$CLUSTER2"
+
+oc new-project istio-cni 2>/dev/null || true
+
+oc apply -f - <<EOF
+apiVersion: sailoperator.io/v1
+kind: IstioCNI
+metadata:
+  name: default
+spec:
+  namespace: istio-cni
+  version: v1.30.1
+EOF
+
+until oc get daemonset/istio-cni-node -n istio-cni &>/dev/null; do sleep 3; done
+oc rollout status daemonset/istio-cni-node -n istio-cni --timeout=300s
+oc get po -n istio-cni
+```
+
+**Expected (each cluster):**
 
 ```text
 istio-cni-node-...   1/1  Running   (one per node)
@@ -699,7 +916,9 @@ istio-cni-node-...   1/1  Running   (one per node)
 
 ---
 
-## 11. Phase 4 — Deploy Istio with SPIRE
+## 12. Phase 4 — Deploy Istio with SPIRE
+
+> **Why this matters:** By default, Istio uses its own built-in CA (called `istiod`) to issue workload certificates. In this POC, we override that and tell Istio to use SPIRE as the certificate source instead (via the SPIRE SDS socket). This is the critical integration point: it makes the mesh's mTLS use SPIFFE identities rather than Istio's internal identities. We also configure Istio to trust both clusters' federation bundle URLs, so Envoy proxies can validate certificates from the peer cluster during cross-cluster communication.
 
 **What it does:** Creates Istiod and configures the mesh to:
 
@@ -787,9 +1006,83 @@ oc get po -n istio-system
 
 ### Cluster 2 Istio CR
 
-Same structure with B trust domain / network / `EXTRA_ROOT_CA_B`, and `caCertificates` order can start with B then A.
+```bash
+export KUBECONFIG="$CLUSTER2"
 
-**Expected:**
+export EXTRA_ROOT_CA_B="$(oc get secret oidc-serving-cert -n ${ZTWIM_NS} -o json | \
+  jq -r '.data."tls.crt"' | base64 -d | sed 's/^/        /')"
+
+oc new-project istio-system 2>/dev/null || true
+
+cat <<EOF | oc apply -f -
+apiVersion: sailoperator.io/v1
+kind: Istio
+metadata:
+  name: default
+spec:
+  namespace: istio-system
+  version: v1.30.1
+  updateStrategy:
+    type: InPlace
+  values:
+    meshConfig:
+      trustDomain: ${CLUSTER_B_TRUST_DOMAIN}
+      defaultConfig:
+        proxyMetadata:
+          WORKLOAD_IDENTITY_SOCKET_FILE: "spire-agent.sock"
+      caCertificates:
+        - spiffeBundleUrl: ${FEDERATION_ENDPOINT_B}
+          trustDomains:
+            - ${CLUSTER_B_TRUST_DOMAIN}
+        - spiffeBundleUrl: ${FEDERATION_ENDPOINT_A}
+          trustDomains:
+            - ${CLUSTER_A_TRUST_DOMAIN}
+    global:
+      meshID: mesh1
+      multiCluster:
+        clusterName: ${CLUSTER_B}
+      network: ${NETWORK_B}
+    pilot:
+      jwksResolverExtraRootCA: |
+${EXTRA_ROOT_CA_B}
+      env:
+        ENABLE_CA_SERVER: "true"
+    sidecarInjectorWebhook:
+      templates:
+        spire: |
+          spec:
+            initContainers:
+            - name: istio-proxy
+              volumeMounts:
+              - name: workload-socket
+                mountPath: /run/secrets/workload-spiffe-uds
+                readOnly: true
+            volumes:
+              - name: workload-socket
+                csi:
+                  driver: "csi.spiffe.io"
+                  readOnly: true
+        spireGw: |
+          spec:
+            containers:
+            - name: istio-proxy
+              volumeMounts:
+              - name: workload-socket
+                mountPath: /run/secrets/workload-spiffe-uds
+                readOnly: true
+            volumes:
+              - name: workload-socket
+                csi:
+                  driver: "csi.spiffe.io"
+                  readOnly: true
+EOF
+
+until oc get deployment istiod -n istio-system &>/dev/null; do sleep 3; done
+oc wait --for=condition=Available deployment/istiod -n istio-system --timeout=300s
+oc get po -n istio-system
+```
+
+**Expected (each cluster):**
 
 ```text
 istiod-...   1/1  Running
@@ -797,9 +1090,11 @@ istiod-...   1/1  Running
 
 ---
 
-## 12. Phase 5 — Federated identities + East-West gateway
+## 13. Phase 5 — Federated identities + East-West gateway
 
-### 12.1 ClusterSPIFFEID for `istio-system` and later `sample`
+> **Why this matters:** SPIRE federation made the two CAs *aware* of each other, and Istio is configured to *trust* both bundle URLs. But individual workloads still need to be told *which peer trust domains they should federate with*. The `ClusterSPIFFEID` resource with `federatesWith` does exactly that — it tells SPIRE to include the peer's CA certificate in the workload's trust bundle, so the workload's Envoy sidecar can validate certificates from the other cluster. The East-West gateway provides the actual network path: it exposes port 15443 for mTLS passthrough, allowing traffic from the peer cluster to reach local services without decrypting and re-encrypting at the ingress boundary.
+
+### 13.1 ClusterSPIFFEID for `istio-system` and later `sample`
 
 **What it does:** Makes matching workloads receive the **peer** trust domain in their CA bundle (`federatesWith`).
 
@@ -824,9 +1119,28 @@ spec:
 EOF
 ```
 
-**Cluster 2:** same with `federatesWith: [${CLUSTER_A_TRUST_DOMAIN}]`.
+**Cluster 2:**
 
-### 12.2 East-West gateway
+```bash
+export KUBECONFIG="$CLUSTER2"
+
+oc apply -f - <<EOF
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: istio-system-federation
+spec:
+  className: zero-trust-workload-identity-manager-spire
+  spiffeIDTemplate: "spiffe://{{ .TrustDomain }}/ns/{{ .PodMeta.Namespace }}/sa/{{ .PodSpec.ServiceAccountName }}"
+  namespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: istio-system
+  federatesWith:
+    - ${CLUSTER_A_TRUST_DOMAIN}
+EOF
+```
+
+### 13.2 East-West gateway
 
 **What it does:** Exposes port `15443` for cross-cluster mTLS passthrough.
 
@@ -876,9 +1190,45 @@ oc wait --for=condition=Available deployment/istio-eastwestgateway -n istio-syst
 oc get po,svc -n istio-system
 ```
 
-**Cluster 2:** same with `networkGateway=network-b`.
+**Cluster 2:**
 
-**Expected:**
+```bash
+export KUBECONFIG="$CLUSTER2"
+
+helm upgrade --install istio-eastwestgateway istio/gateway \
+  -n istio-system \
+  --set-json 'podAnnotations={"inject.istio.io/templates":"gateway,spireGw"}' \
+  --set name=istio-eastwestgateway \
+  --set networkGateway=network-b \
+  --kubeconfig="$KUBECONFIG"
+
+oc adm policy add-scc-to-user anyuid -z istio-eastwestgateway -n istio-system
+
+oc apply -f - <<EOF
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: cross-network-gateway
+  namespace: istio-system
+spec:
+  selector:
+    istio: eastwestgateway
+  servers:
+  - port:
+      number: 15443
+      name: tls
+      protocol: TLS
+    tls:
+      mode: AUTO_PASSTHROUGH
+    hosts:
+    - "*.local"
+EOF
+
+oc wait --for=condition=Available deployment/istio-eastwestgateway -n istio-system --timeout=300s
+oc get po,svc -n istio-system
+```
+
+**Expected (each cluster):**
 
 ```text
 istio-eastwestgateway-...   1/1  Running
@@ -887,7 +1237,10 @@ istio-eastwestgateway   LoadBalancer   ...   <EXTERNAL-HOSTNAME>   15443:...
 
 ---
 
-## 13. Phase 6 — Exchange remote secrets
+## 14. Phase 6 — Exchange remote secrets
+
+
+> **Why this matters:** Even though the East-West gateway provides a network path and the certificates are mutually trusted, Istio still doesn't know that a service called `backend.sample` on Cluster 2 exists. Remote secrets give each Istiod read access to the peer cluster's Kubernetes API, so it can discover services running on the other side. Without this, when `frontend` on Cluster 1 calls `backend.sample:8080`, Istiod would say "I don't know that endpoint" and the request would fail — not because of identity or network issues, but because of missing service discovery.
 
 **What it does:** Each Istiod can watch the other cluster’s API for service discovery.
 
@@ -922,14 +1275,25 @@ cluster-b   istio-system/istio-remote-secret-cluster-b  synced   istiod-...
 
 ---
 
-## 14. Phase 7 — Prove cross-cluster SPIRE mTLS
+## 15. Phase 7 — Prove cross-cluster SPIRE mTLS
 
-### 14.1 Sample namespace + federated ClusterSPIFFEID
+> **Why this matters:** Before adding the complexity of OPA authorization, we need to confirm that the identity and transport layers work end-to-end. This phase deploys simple test workloads across both clusters and proves that a pod on Cluster 1 can call a pod on Cluster 2 over SPIRE-issued mTLS. If this fails, we know the issue is in identity or networking — not in policy. This creates a known-good baseline so that when we add OPA in the next phase, any new failures can be confidently attributed to authorization policy.
 
-**Both clusters:**
+### 15.1 Sample namespace + federated ClusterSPIFFEID
+
+**Cluster 1 — create namespace:**
 
 ```bash
-export KUBECONFIG="$CLUSTER1"   # then $CLUSTER2
+export KUBECONFIG="$CLUSTER1"
+
+oc new-project sample 2>/dev/null || true
+oc label namespace sample istio-injection=enabled --overwrite
+```
+
+**Cluster 2 — create namespace:**
+
+```bash
+export KUBECONFIG="$CLUSTER2"
 
 oc new-project sample 2>/dev/null || true
 oc label namespace sample istio-injection=enabled --overwrite
@@ -939,6 +1303,7 @@ oc label namespace sample istio-injection=enabled --overwrite
 
 ```bash
 export KUBECONFIG="$CLUSTER1"
+
 oc apply -f - <<EOF
 apiVersion: spire.spiffe.io/v1alpha1
 kind: ClusterSPIFFEID
@@ -955,9 +1320,28 @@ spec:
 EOF
 ```
 
-**Cluster 2 sample SPIFFEID** (`federatesWith` = A): mirror with A trust domain.
+**Cluster 2 sample SPIFFEID** (`federatesWith` = A):
 
-### 14.2 Workloads
+```bash
+export KUBECONFIG="$CLUSTER2"
+
+oc apply -f - <<EOF
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: sample-federation
+spec:
+  className: zero-trust-workload-identity-manager-spire
+  spiffeIDTemplate: "spiffe://{{ .TrustDomain }}/ns/{{ .PodMeta.Namespace }}/sa/{{ .PodSpec.ServiceAccountName }}"
+  namespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: sample
+  federatesWith:
+    - ${CLUSTER_A_TRUST_DOMAIN}
+EOF
+```
+
+### 15.2 Workloads
 
 **Cluster 2 — helloworld server:**
 
@@ -983,7 +1367,7 @@ oc patch deploy sleep -n sample --type='merge' \
 oc rollout status deploy/sleep -n sample --timeout=300s
 ```
 
-### 14.3 mTLS smoke test
+### 15.3 mTLS smoke test
 
 ```bash
 export KUBECONFIG="$CLUSTER1"
@@ -1002,11 +1386,13 @@ Only after this works, continue to OPA.
 
 ---
 
-## 15. Phase 8 — Add OPA authorization
+## 16. Phase 8 — Add OPA authorization
+
+> **Why this matters:** mTLS with SPIRE proves *who* is calling (authentication), but it doesn't decide *whether* that caller should be allowed (authorization). OPA fills this gap. It inspects the caller's SPIFFE ID from the mTLS certificate (passed via the `X-Forwarded-Client-Cert` header) and evaluates a Rego policy to decide allow or deny. This is the difference between "I know who you are" and "You're allowed to do this." Without OPA, any workload with a valid SPIFFE identity could call any other workload — OPA adds fine-grained, policy-driven access control on top of identity.
 
 All OPA control-plane pieces run on **Cluster 2**. Callers run on **Cluster 1**.
 
-### 15.1 OPA ConfigMap + Rego (Cluster 2)
+### 16.1 OPA ConfigMap + Rego (Cluster 2)
 
 **What it does:** Deny by default; allow only GET from Cluster 1 `sa/frontend`.
 
@@ -1048,7 +1434,7 @@ data:
     }
 EOF
 ```
-### 15.2 Backend + OPA sidecar (Cluster 2)
+### 16.2 Backend + OPA sidecar (Cluster 2)
 
 **What it does:** Runs app + OPA + Istio/SPIRE sidecar in one pod.
 
@@ -1133,7 +1519,7 @@ backend-...   3/3  Running
 
 (containers: `backend`, `opa`, `istio-proxy`)
 
-### 15.3 Register OPA in Istio service registry (Cluster 2)
+### 16.3 Register OPA in Istio service registry (Cluster 2)
 
 **What it does:** Istio CUSTOM authz needs a real registry host. Sidecar OPA is reached as `127.0.0.1` via ServiceEntry.
 
@@ -1169,7 +1555,7 @@ spec:
 EOF
 ```
 
-### 15.4 Extension provider + AuthorizationPolicy (Cluster 2)
+### 16.4 Extension provider + AuthorizationPolicy (Cluster 2)
 
 ```bash
 export KUBECONFIG="$CLUSTER2"
@@ -1242,7 +1628,7 @@ oc get istio default -o jsonpath='{.spec.values.meshConfig.extensionProviders}' 
 ]
 ```
 
-### 15.5 Frontends + backend Service stub (Cluster 1)
+### 16.5 Frontends + backend Service stub (Cluster 1)
 
 ```bash
 export KUBECONFIG="$CLUSTER1"
@@ -1333,9 +1719,11 @@ frontend-2-...   2/2  Running
 
 ---
 
-## 16. Phase 9 — Final success tests
+## 17. Phase 9 — Final success tests
 
-### 16.1 Authorization tests (Cluster 1)
+> **Why this matters:** This is the proof that the entire stack works together. We send three requests from Cluster 1 to the backend on Cluster 2: one from the *allowed* frontend (expecting HTTP 200), one from the *denied* frontend (expecting HTTP 403), and one `curl` without a mesh identity (expecting HTTP 403). The 200/403/403 pattern proves that (1) SPIRE identities work across clusters, (2) mTLS is enforced, (3) OPA correctly distinguishes between allowed and denied callers based on their SPIFFE IDs, and (4) unauthenticated traffic is rejected. If all three pass, the zero-trust architecture is fully functional.
+
+### 17.1 Authorization tests (Cluster 1)
 
 ```bash
 export KUBECONFIG="$CLUSTER1"
@@ -1361,7 +1749,7 @@ frontend-2 GET → HTTP 403
 frontend POST → HTTP 403
 ```
 
-### 16.2 OPA decision logs (Cluster 2)
+### 17.2 OPA decision logs (Cluster 2)
 
 ```bash
 export KUBECONFIG="$CLUSTER2"
@@ -1393,7 +1781,7 @@ That confirms **SPIRE AuthN across clusters** + **OPA AuthZ**.
 
 ---
 
-## 17. Quick map: who runs where
+## 18. Quick map: who runs where
 
 | Component | Cluster 1 | Cluster 2 |
 |---|---|---|
@@ -1408,7 +1796,7 @@ That confirms **SPIRE AuthN across clusters** + **OPA AuthZ**.
 
 ---
 
-## 18. Success checklist
+## 19. Success checklist
 
 Use this as your “POC passed” gate:
 
